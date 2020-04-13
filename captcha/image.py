@@ -12,6 +12,7 @@ from PIL import Image
 from PIL import ImageFilter
 from PIL.ImageDraw import Draw
 from PIL.ImageFont import truetype
+from math import pi,cos,sin
 try:
     from cStringIO import StringIO as BytesIO
 except ImportError:
@@ -134,8 +135,31 @@ class ImageCaptcha(_Captcha):
         points = [x1, y1, x2, y2]
         end = random.randint(160, 200)
         start = random.randint(0, 20)
+        
         Draw(image).arc(points, start, end, fill=color)
         return image
+    
+    @staticmethod
+    def create_noise_line(image, color,len_based_on_width=True,len_ratios=(0.1,0.4),n_lines=1):
+        w, h = image.size
+        ratio = random.uniform(len_ratios[0],len_ratios[1])
+        if len_based_on_width:
+            l = w*ratio
+        else:
+            l = h*ratio
+        
+        for i in range(n_lines):
+            theta = random.uniform(-pi,pi)
+
+            x1 = random.randint(0, w)
+            y1 = random.randint(0, h)
+            x2 = min(max(0,x1+l*cos(theta)),w)
+            y2 = min(max(0,y1+l*sin(theta)),h)
+            
+            points = [(x1,y1),(x2,y2)]
+            Draw(image).line(points, fill=color)
+        return image
+
 
     @staticmethod
     def create_noise_dots(image, color, width=3, number=30):
@@ -148,7 +172,7 @@ class ImageCaptcha(_Captcha):
             number -= 1
         return image
 
-    def create_captcha_image(self, chars, color, background):
+    def create_captcha_image(self, chars, color, background,enable_warping=True,enable_rotate=True):
         """Create the CAPTCHA image itself.
 
         :param chars: text to be generated.
@@ -160,22 +184,28 @@ class ImageCaptcha(_Captcha):
         image = Image.new('RGB', (self._width, self._height), background)
         draw = Draw(image)
 
-        def _draw_character(c):
+        def _draw_character(c,enable_warping=enable_warping):
             font = random.choice(self.truefonts)
             w, h = draw.textsize(c, font=font)
 
-            dx = random.randint(0, 4)
-            dy = random.randint(0, 6)
+            dx = random.randint(0, 3)
+            dy = random.randint(0, 5)
             im = Image.new('RGBA', (w + dx, h + dy))
             Draw(im).text((dx, dy), c, font=font, fill=color)
 
             # rotate
-            im = im.crop(im.getbbox())
-            im = im.rotate(random.uniform(-30, 30), Image.BILINEAR, expand=1)
+            if enable_rotate:
+                im = im.crop(im.getbbox())
+                im = im.rotate(random.uniform(-30, 30), Image.BILINEAR, expand=1)
 
             # warp
-            dx = w * random.uniform(0.1, 0.3)
-            dy = h * random.uniform(0.2, 0.3)
+            if enable_warping:
+                dx = 0
+                dy = 0
+            else:
+                dx = w * random.uniform(0.1, 0.3)
+                dy = h * random.uniform(0.2, 0.3)            
+            
             x1 = int(random.uniform(-dx, dx))
             y1 = int(random.uniform(-dy, dy))
             x2 = int(random.uniform(-dx, dx))
@@ -194,9 +224,9 @@ class ImageCaptcha(_Captcha):
 
         images = []
         for c in chars:
-            if random.random() > 0.5:
-                images.append(_draw_character(" "))
-            images.append(_draw_character(c))
+            # if random.random() > 0.5:
+            images.append(_draw_character(" ",enable_warping=enable_warping))
+            images.append(_draw_character(c,enable_warping=enable_warping))
 
         text_width = sum([im.size[0] for im in images])
 
