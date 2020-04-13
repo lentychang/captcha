@@ -1,4 +1,4 @@
-This repo is forked from [lepture/captcha](https://github.com/lepture/captcha)
+This repo is forked from [lepture/captcha](https://github.com/lepture/captcha)  
 Captcha
 =======
 
