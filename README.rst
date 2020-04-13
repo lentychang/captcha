@@ -1,3 +1,7 @@
+This repo is forked from [lepture/captcha](https://github.com/lepture/captcha)
+Code is quick modified for my project. Re-structure is needed in the future.
+Change is listed at the bottom
+
 Captcha
 =======
 
@@ -30,7 +34,8 @@ Installation
 
 Install captcha with pip::
 
-    $ pip install captcha
+    $ git clone https://github.com/lentychang/captcha.git
+    $ cd captcha && python3 setup.py install
 
 Usage
 -----
@@ -43,25 +48,27 @@ Audio and Image CAPTCHAs are in seprated modules:
     from captcha.image import ImageCaptcha
 
     audio = AudioCaptcha(voicedir='/path/to/voices')
-    image = ImageCaptcha(fonts=['/path/A.ttf', '/path/B.ttf'])
+    image = ImageCaptcha(width=160, height=60, fonts=['/path/A.ttf', '/path/B.ttf'], font_sizes=[25,30,32])
 
     data = audio.generate('1234')
     audio.write('1234', 'out.wav')
 
-    data = image.generate('1234')
-    image.write('1234', 'out.png')
+    im = image.create_captcha_image(chars=f"{123:0>6d}",color=(255,0,0),background=(255,255,255))
+    im = ImageCaptcha.create_noise_dots(im, color=(200,200,0))
+    im = ImageCaptcha.create_noise_curve(im, color=(0,255,255))
+    im.save("filename.png",format="png")
 
 This is the APIs for your daily works. We do have built-in voice data and font
 data. But it is suggested that you use your own voice and font data.
 
 
-Contribution
-------------
+Change
+------
+- add enable_warping flag
 
-We need voice wav files. The voice wav file should be in 8-bit, please keep it
-as small as possible. Name your voice file as::
 
-    {{language}}-{{character}}-{{username}}.wav
-    # exmaple: zh-1-lepture.wav
-
-TODO: we need a place to upload voice files.
+TODO
+----
+- Add add_noise_line function
+- Add filename member to class, so that write function can use for save file
+- change static method to instance method, so that noise can be called directly?
